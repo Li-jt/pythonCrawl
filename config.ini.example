@@ -1,0 +1,9 @@
+[pixiv]
+# 账户
+account =
+# 密码
+password =
+
+[HttpSession]
+session =
+
