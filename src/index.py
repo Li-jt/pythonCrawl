@@ -7,7 +7,7 @@ from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
-from utils.index import getRootPath, addressConversion, nameProcessing
+from utils.index import get_root_path, address_conversion, name_processing
 from utils.requests.index import get_img
 
 chrome_options = Options()
@@ -17,7 +17,7 @@ nodes = {
     1: '.cDZIoX', 2: 'section ul.hdRpMN', 3: '.cDZIoX'
 }
 
-config_path = os.path.join(getRootPath(), "config.ini")
+config_path = os.path.join(get_root_path(), "config.ini")
 
 config = configparser.ConfigParser()
 config.read(config_path, encoding='utf-8')
@@ -84,10 +84,10 @@ async def data_processing(x, index):
     driver.implicitly_wait(0.1)
     num = x.find_elements(By.CSS_SELECTOR, '.kZlOCw>span:nth-child(2)')
     alt = x.find_element(By.CSS_SELECTOR, 'img').get_attribute('alt')
-    urls = addressConversion(x.find_element(By.CSS_SELECTOR, 'img').get_attribute('src'),
-                             int(num[0].text if num else 1))
+    urls = address_conversion(x.find_element(By.CSS_SELECTOR, 'img').get_attribute('src'),
+                              int(num[0].text if num else 1))
     for i, src in enumerate(urls):
-        await get_img(src, nameProcessing(f'{index}-{alt}-{i}'), username)
+        await get_img(src, name_processing(f'{index}-{alt}-{i}'), username)
 
 
 async def pages():

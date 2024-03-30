@@ -1,16 +1,18 @@
 # 获得根路径
 import os
+import re
 
 
-def getRootPath():
+def get_root_path():
     # 获取文件目录
     cur_path = os.path.abspath(os.path.dirname(__file__))
+    par_path = os.path.dirname(cur_path)
     # 获取项目根路径，内容为当前项目的名字
-    root_path = cur_path[:cur_path.find('pixiv') + len('pixiv')]
+    root_path = par_path
     return root_path
 
 
-def addressConversion(url: str, num: int):
+def address_conversion(url: str, num: int):
     urls = []
     for i in range(num):
         address = url.replace('_p0', f'_p{i}')
@@ -30,5 +32,8 @@ def mkdir(path):
         print("---  OK  ---")
 
 
-def nameProcessing(name: str):
-    return name.replace('/', '-').replace(':', '：')
+def name_processing(name: str, replace=''):
+    return re.sub(re.compile('[/\\\\:*?"<>|]')
+                  , replace,
+                  name
+                  )
