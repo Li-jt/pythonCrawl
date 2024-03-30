@@ -13,8 +13,6 @@ from utils.requests.index import get_img
 chrome_options = Options()
 chrome_options.add_argument("--headless")
 
-# webdriver.ChromeOptions().add_argument('–headless')
-
 nodes = {
     1: '.cDZIoX', 2: 'section ul.hdRpMN', 3: '.cDZIoX'
 }
@@ -83,7 +81,6 @@ else:
 
 
 async def data_processing(x, index):
-    # > div: nth - child(2) > div > span:nth - child(2)
     driver.implicitly_wait(0.1)
     num = x.find_elements(By.CSS_SELECTOR, '.kZlOCw>span:nth-child(2)')
     alt = x.find_element(By.CSS_SELECTOR, 'img').get_attribute('alt')
