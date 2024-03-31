@@ -10,7 +10,7 @@
 
 ### 导出整个项目的依赖包： pipreqs . --force --ignore ".venv"
 
-### 安装依赖文件： pip install -r requirements.txt.
+### 安装依赖文件： pip install -r requirements.txt
 
 ### 打包命令：Pyinstaller -D -w -i pixiv.png main.py
 
