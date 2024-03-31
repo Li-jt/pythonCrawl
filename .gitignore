@@ -1,3 +1,6 @@
 /uploads/
 /config.ini
 /.idea
+/build/
+/dist/
+/main.spec

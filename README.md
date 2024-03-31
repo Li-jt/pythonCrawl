@@ -6,9 +6,13 @@
 
 ## 运行目录：src/index.py
 
-### 生产依赖文件： pipreqs . --force --ignore ".venv"
+### 导出整个环境的依赖包：pip freeze > requirements.txt
 
-### 安装依赖文件： pip install -r requirements.txt
+### 导出整个项目的依赖包： pipreqs . --force --ignore ".venv"
+
+### 安装依赖文件： pip install -r requirements.txt.
+
+### 打包命令：Pyinstaller -D -w -i pixiv.png main.py
 
 
 # pipreqs 控制台参数
