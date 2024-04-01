@@ -1,5 +1,7 @@
+import configparser
+import ctypes
 import os
-import queue
+import threading
 from threading import Thread
 
 import wx
@@ -8,6 +10,7 @@ from wx.lib.pubsub import pub
 
 from src.index import get_data
 import utils.glo as gl
+from utils.index import get_root_path, mkdir
 
 
 # class MyFrame(wx.Frame):
@@ -40,6 +43,23 @@ class TestThreading(Thread):
     def run(self):
         get_data(self.search, self.user, self.type)
 
+    def get_id(self):
+
+        # returns id of the respective thread
+        if hasattr(self, '_thread_id'):
+            return self._thread_id
+        for id, thread in threading._active.items():
+            if thread is self:
+                return id
+
+    def raise_exception(self):
+        thread_id = self.get_id()
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+                                                         ctypes.py_object(SystemExit))
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+            print('Exception raise failure')
+
 
 class MyDialog(wx.Dialog):
 
@@ -48,7 +68,7 @@ class MyDialog(wx.Dialog):
                            size=wx.Size(273, 105), style=wx.DEFAULT_DIALOG_STYLE)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWFRAME))
 
         bSizer8 = wx.BoxSizer(wx.VERTICAL)
 
@@ -90,11 +110,14 @@ class MyFrame(wx.Frame):
                           size=wx.Size(460, 281),
                           style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
+        self.threa = None
         self.type = None
         self.user = None
         self.search = None
+
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
-        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWFRAME))
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
         bSizer1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -175,7 +198,7 @@ class MyFrame(wx.Frame):
         bSizer2211.Add(self.m_gauge2, 1, wx.ALL, 5)
 
         self.m_textCtrl12 = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
-        self.m_textCtrl12.SetMinSize(wx.Size(80, 17))
+        self.m_textCtrl12.SetMinSize(wx.Size(80, 20))
         self.m_textCtrl12.SetValue(f'0/0')
 
         bSizer2211.Add(self.m_textCtrl12, 0, wx.ALL, 5)
@@ -231,6 +254,18 @@ class MyFrame(wx.Frame):
             self.m_gauge2.SetValue(int(num / total * 100))
         self.m_textCtrl12.SetValue(f'{num}/{total}')
 
+    def OnCloseWindow(self, e):
+        dial = wx.MessageDialog(None, 'Are you sure to quit?', 'Question',
+                                wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        ret = dial.ShowModal()
+        if ret == wx.ID_YES:
+            gl.set_value('isClose', True)
+            if self.threa:
+                self.threa.raise_exception()
+            wx.GetApp().ExitMainLoop()
+        else:
+            e.Veto()
+
     # Virtual event handlers, override them in your derived class
     def handler_search(self, event):
         try:
@@ -277,7 +312,10 @@ class MyFrame(wx.Frame):
         dlg.Destroy()
 
     def handler_ok(self, event):
-        if self.m_sdbSizer1OK.GetLabel() == '完成':
+        if not os.path.isfile(os.path.join(get_root_path(), 'config.ini')):
+            mkdir(os.path.join(get_root_path()))
+            MyLogin(self).Show()
+        elif self.m_sdbSizer1OK.GetLabel() == '完成':
             gl.set_value('total', 0)
             gl.set_value('num', 0)
             self.m_gauge2.SetValue(0)
@@ -302,8 +340,132 @@ class MyFrame(wx.Frame):
                     if not dia.IsShown():
                         dia.Show()
                 else:
-                    TestThreading(self.search, self.user, self.type)
+                    self.threa = TestThreading(self.search, self.user, self.type)
                     self.m_sdbSizer1OK.Disable()
             else:
-                TestThreading(self.search, self.user, self.type)
+                self.threa = TestThreading(self.search, self.user, self.type)
                 self.m_sdbSizer1OK.Disable()
+
+
+class MyLogin(wx.Dialog):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, id=wx.ID_ANY, title=u"登录", pos=wx.DefaultPosition,
+                           size=wx.Size(460, 150),
+                           style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+        self.session = None
+        self.paw = None
+        self.user = None
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWFRAME))
+
+        bSizer1 = wx.BoxSizer(wx.VERTICAL)
+
+        bSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+
+        bSizer2.SetMinSize(wx.Size(-1, 10))
+        self.m_staticText2 = wx.StaticText(self, wx.ID_ANY, u"账户：", wx.DefaultPosition,
+                                           wx.DefaultSize, wx.ALIGN_RIGHT)
+        self.m_staticText2.Wrap(-1)
+
+        self.m_staticText2.SetMinSize(wx.Size(50, -1))
+
+        bSizer2.Add(self.m_staticText2, 0, wx.ALL, 5)
+
+        self.m_textCtrl3 = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer2.Add(self.m_textCtrl3, 1, wx.ALL, 5)
+
+        bSizer1.Add(bSizer2, 1, wx.EXPAND, 5)
+
+        bSizer21 = wx.BoxSizer(wx.HORIZONTAL)
+
+        bSizer21.SetMinSize(wx.Size(-1, 10))
+        self.m_staticText21 = wx.StaticText(self, wx.ID_ANY, u"密码：", wx.DefaultPosition, wx.DefaultSize,
+                                            wx.ALIGN_RIGHT)
+        self.m_staticText21.Wrap(-1)
+
+        self.m_staticText21.SetMinSize(wx.Size(50, -1))
+
+        bSizer21.Add(self.m_staticText21, 0, wx.ALL, 5)
+
+        self.m_textCtrl31 = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer21.Add(self.m_textCtrl31, 1, wx.ALL, 5)
+
+        bSizer1.Add(bSizer21, 1, wx.EXPAND, 5)
+
+        bSizer22 = wx.BoxSizer(wx.HORIZONTAL)
+
+        bSizer22.SetMinSize(wx.Size(-1, 10))
+
+        bSizer22 = wx.BoxSizer(wx.HORIZONTAL)
+
+        bSizer22.SetMinSize(wx.Size(-1, 10))
+        self.m_staticText22 = wx.StaticText(self, wx.ID_ANY, u"session?：", wx.DefaultPosition,
+                                            wx.DefaultSize, wx.ALIGN_RIGHT)
+        self.m_staticText22.Wrap(-1)
+
+        self.m_staticText22.SetMinSize(wx.Size(60, -1))
+
+        bSizer22.Add(self.m_staticText22, 0, wx.ALL, 5)
+
+        self.m_textCtrl32 = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer22.Add(self.m_textCtrl32, 1, wx.ALL, 5)
+
+        bSizer1.Add(bSizer22, 1, wx.EXPAND, 5)
+
+        m_sdbSizer1 = wx.StdDialogButtonSizer()
+        self.m_sdbSizer1OK = wx.Button(self, wx.ID_OK)
+        m_sdbSizer1.AddButton(self.m_sdbSizer1OK)
+        m_sdbSizer1.Realize();
+
+        bSizer1.Add(m_sdbSizer1, 1, wx.EXPAND, 5)
+
+        self.SetSizer(bSizer1)
+        self.Layout()
+
+        self.Centre(wx.BOTH)
+
+        self.m_textCtrl3.Bind(wx.EVT_TEXT, self.handler_user)
+        self.m_textCtrl31.Bind(wx.EVT_TEXT, self.handler_paw)
+        self.m_textCtrl32.Bind(wx.EVT_TEXT, self.handler_session)
+        self.m_sdbSizer1OK.Bind(wx.EVT_BUTTON, self.handler_ok)
+
+    def __del__(self):
+        self.m_textCtrl3.Unbind(wx.EVT_TEXT, handler=self.handler_user)
+        self.m_textCtrl31.Unbind(wx.EVT_TEXT, handler=self.handler_paw)
+        self.m_textCtrl32.Unbind(wx.EVT_TEXT, handler=self.handler_session)
+        self.m_sdbSizer1OK.Unbind(wx.EVT_BUTTON, handler=self.handler_ok)
+
+    def handler_user(self, event):
+        if event.GetString() != '':
+            self.user = event.GetString()
+
+    def handler_paw(self, event):
+        if event.GetString() != '':
+            self.paw = event.GetString()
+
+    def handler_session(self, event):
+        if event.GetString() != '':
+            self.session = event.GetString()
+
+    def handler_ok(self, event):
+        if not self.user:
+            dia = MyDialog(self, '请输入账户')
+            if not dia.IsShown():
+                dia.Show()
+        elif not self.paw:
+            dia = MyDialog(self, '请输入密码')
+            if not dia.IsShown():
+                dia.Show()
+        else:
+            config_path = os.path.join(get_root_path(), 'config.ini')
+            with open(config_path, 'wb'):
+                config = configparser.ConfigParser()
+                config.read(config_path, encoding='utf-8')
+                config.add_section('pixiv')
+                config.add_section('HttpSession')
+                config.set('pixiv', 'account', self.user)
+                config.set('pixiv', 'password', self.paw)
+                config.set('HttpSession', 'session', self.session)
+                config.write(open(config_path, 'w', encoding='utf-8'))
+
+            self.Destroy()

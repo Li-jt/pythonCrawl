@@ -1,6 +1,6 @@
 import wx
 
-from src.view.index import MyFrame
+from src.view.index import MyFrame, MyLogin
 import utils.glo as gl
 
 if __name__ == '__main__':
@@ -8,6 +8,7 @@ if __name__ == '__main__':
     app = wx.App()
     # 创建窗口
     frame = MyFrame()
+    # frame = MyLogin()
     frame.Centre()
     frame.Show()
 

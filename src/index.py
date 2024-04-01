@@ -19,11 +19,6 @@ chrome_options.add_argument("--headless")
 nodes = {
     1: '.cDZIoX', 2: 'section ul.hdRpMN', 3: '.cDZIoX'
 }
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-config_path = os.path.join(get_root_path(), 'config.ini')
-
-config = configparser.ConfigParser()
-config.read(config_path, encoding='utf-8')
 
 # searchMethod = int(input('搜索方式(1:画师id;2:搜索;)：'))
 searchMethod = ''
@@ -37,6 +32,11 @@ page = 1
 # if searchMethod == 2:
 # ageType = int(input('类型（1:全部，2:全年龄，3:R-18）：'))
 def get_data(search, user, type):
+    config_path = os.path.join(get_root_path(), 'config.ini')
+
+    config = configparser.ConfigParser()
+    config.read(config_path, encoding='utf-8')
+
     global searchMethod
     global username
     global ageType
@@ -106,6 +106,8 @@ def get_data(search, user, type):
         gl.set_value('total', gl.get_value('total') + len(urls))
         wx.CallAfter(pub.sendMessage, "update")
         for i, src in enumerate(urls):
+            if gl.get_value('isClose'):
+                raise Exception('程序结束')
             await get_img(src, name_processing(f'{index}-{alt}-{i}'), username)
 
     async def pages():
